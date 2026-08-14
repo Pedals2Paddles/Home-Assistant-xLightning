@@ -1,0 +1,209 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a lightning monitoring location",
+        "description": "Xweather authenticates with a client ID and secret key pair, not a single API key. Both are on your Xweather account page under the application you registered.",
+        "data": {
+          "name": "Location name",
+          "client_id": "Client ID",
+          "client_secret": "Secret key",
+          "location": "Coordinates to monitor"
+        },
+        "data_description": {
+          "name": "Used as the device name in Home Assistant.",
+          "location": "Drag the marker or type coordinates. All strike distances are measured from this point."
+        }
+      },
+      "reconfigure": {
+        "title": "Edit {name}",
+        "description": "Move the marker or type new coordinates to change the location this device monitors. Existing entities and their history are kept — only the point that distances are measured from changes.",
+        "data": {
+          "name": "Location name",
+          "client_id": "Client ID",
+          "client_secret": "Secret key",
+          "location": "Coordinates to monitor"
+        },
+        "data_description": {
+          "name": "Renaming this also renames the device, unless you have renamed the device manually.",
+          "location": "All strike distances are measured from this point."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate {name}",
+        "description": "Xweather rejected the stored credentials. Enter a current client ID and secret key.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Secret key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the Xweather API. Check your network connection and try again.",
+      "invalid_auth": "Xweather rejected these credentials. Confirm the client ID and secret key, and that the namespace registered for them matches how you are using them.",
+      "quota_exceeded": "This Xweather account has used up its request allowance.",
+      "unknown": "Unexpected error. Check the Home Assistant log for details."
+    },
+    "abort": {
+      "already_configured": "These coordinates are already being monitored.",
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "The location was updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Lightning options",
+        "description": "The /lightning and /lightning/threats endpoints carry a 10x request multiplier, so shorter polling intervals consume your allowance quickly. Standard (non-Enterprise) access caps the radius at 100 km and the lookback at 5 minutes.",
+        "data": {
+          "radius_km": "Search radius",
+          "nearby_km": "Nearby alert distance",
+          "window_minutes": "Lookback window",
+          "scan_interval": "Polling interval",
+          "enable_threats": "Poll storm threat nowcasts",
+          "retention_minutes": "Keep last strike for",
+          "skip_when_clear": "Skip Detailed API Calls When Clear",
+          "map_style": "Map style",
+          "map_size": "Map size (pixels)",
+          "map_frames": "Lightning Map Frames"
+        },
+        "data_description": {
+          "radius_km": "How far out to look for strikes.",
+          "nearby_km": "The 'Lightning nearby' sensor turns on when a strike falls within this distance.",
+          "window_minutes": "How far back the counts reach. Values above 5 minutes require the Lightning Enterprise add-on.",
+          "scan_interval": "How often to poll. Each poll makes 2 requests, or 3 with threats enabled.",
+          "enable_threats": "Adds 60-minute storm nowcast entities. Costs an extra request per poll at a 10x multiplier.",
+          "retention_minutes": "After the sky goes quiet, keep reporting the last strike for this long so the 'Nearest ...' sensors read as history instead of unknown. Set to 0 to blank them as soon as the storm leaves the window.",
+          "skip_when_clear": "Skip the detailed (and potentially expensive) API calls and map graphic refreshes when there is no lightning detected within the search radius. Detailed API calls and map refreshes are a 10x multiplier against your xWeather API requests. This can add up very fast against the free tier's 15,000 request limit. With this skip option enabled (default), the integration will only use the 10x multiplier detailed API call when there is actually lightning detected within your selected search radius. It is a waste of electrons to poll for non-existent details anyway.",
+          "map_style": "Applies when map frames is 1 or more. Icons draws lightning bolts, circles draws plotted points, radar adds a radar underlay (extra cost).",
+          "map_size": "Square edge length, when a map is enabled. Larger images cost the same but take longer to fetch.",
+          "map_frames": "Number of map graphic frames for the lightning map image entity. Default (0) because this is a 10x multiplier against your xWeather API requests. This can add up very fast against the free tier's 15,000 request limit. A value of 1 creates a still image. A value greater than 1 creates an animated GIF with the value being the number of frames. Each frame steps back 5 minutes, matching how often the lightning map layers are regenerated."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "lightning_detected": {
+        "name": "Lightning detected"
+      },
+      "lightning_nearby": {
+        "name": "Lightning nearby"
+      },
+      "threat_active": {
+        "name": "Storm threat active"
+      },
+      "threat_severe": {
+        "name": "Storm threat severe"
+      }
+    },
+    "sensor": {
+      "activity_status": {
+        "name": "Lightning activity",
+        "state": {
+          "active": "Active",
+          "recent": "Recently cleared",
+          "clear": "Clear"
+        }
+      },
+      "pulse_count": {
+        "name": "Pulse count"
+      },
+      "cloud_to_ground_count": {
+        "name": "Cloud-to-ground pulses"
+      },
+      "intracloud_count": {
+        "name": "Intracloud pulses"
+      },
+      "positive_count": {
+        "name": "Positive polarity pulses"
+      },
+      "negative_count": {
+        "name": "Negative polarity pulses"
+      },
+      "peak_amplitude_max": {
+        "name": "Peak amplitude maximum"
+      },
+      "peak_amplitude_avg": {
+        "name": "Peak amplitude average"
+      },
+      "last_pulse_time": {
+        "name": "Last pulse"
+      },
+      "nearest_distance": {
+        "name": "Nearest strike distance"
+      },
+      "nearest_bearing": {
+        "name": "Nearest strike bearing"
+      },
+      "nearest_direction": {
+        "name": "Nearest strike direction",
+        "state": {
+          "N": "N",
+          "NNE": "NNE",
+          "NE": "NE",
+          "ENE": "ENE",
+          "E": "E",
+          "ESE": "ESE",
+          "SE": "SE",
+          "SSE": "SSE",
+          "S": "S",
+          "SSW": "SSW",
+          "SW": "SW",
+          "WSW": "WSW",
+          "W": "W",
+          "WNW": "WNW",
+          "NW": "NW",
+          "NNW": "NNW",
+          "none": "None"
+        }
+      },
+      "nearest_type": {
+        "name": "Nearest strike type",
+        "state": {
+          "cloud_to_ground": "Cloud-to-ground",
+          "intracloud": "Intracloud",
+          "none": "None"
+        }
+      },
+      "nearest_peak_amplitude": {
+        "name": "Nearest strike peak amplitude"
+      },
+      "nearest_time": {
+        "name": "Nearest strike time"
+      },
+      "nearest_age": {
+        "name": "Nearest strike age"
+      },
+      "threat_speed": {
+        "name": "Storm threat speed"
+      },
+      "threat_heading": {
+        "name": "Storm threat heading"
+      },
+      "threat_expires": {
+        "name": "Storm threat ends"
+      },
+      "search_radius": {
+        "name": "Search radius"
+      },
+      "api_requests": {
+        "name": "API requests"
+      }
+    },
+    "image": {
+      "lightning_map": {
+        "name": "Lightning map"
+      }
+    }
+  },
+  "selector": {
+    "map_style": {
+      "options": {
+        "icons": "Lightning bolt icons",
+        "circles": "Strike circles",
+        "radar": "Icons over radar"
+      }
+    }
+  }
+}

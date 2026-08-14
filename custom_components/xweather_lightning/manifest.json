@@ -1,0 +1,12 @@
+{
+  "domain": "xweather_lightning",
+  "name": "Xweather Lightning",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/YOUR_GITHUB_USER/ha-xlightning",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/YOUR_GITHUB_USER/ha-xlightning/issues",
+  "requirements": [],
+  "version": "0.7.0"
+}
