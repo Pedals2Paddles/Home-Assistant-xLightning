@@ -110,16 +110,15 @@ class XWeatherLightningMap(XWeatherLightningEntity, ImageEntity):
         Refreshes on: the first update, any poll reporting active lightning,
         and the transition out of active so the final frame is accurate.
         Steady quiet does not refresh, which is what keeps map requests near
-        zero on an ordinary day.
+        zero on an ordinary day. This throttling is unconditional — there is
+        no option to trade it away for extra freshness, since that would cost
+        a 10x-multiplier request for a map that has nothing new to show.
         """
         data = self.coordinator.data
         activity = data.activity if data else None
 
         should_refresh = (
             self._last_activity is None
-            # With the skip option off the user has asked for freshness over
-            # thrift, so refresh every poll regardless of activity.
-            or not self.coordinator.skip_when_clear
             or activity == ACTIVITY_ACTIVE
             or activity != self._last_activity
         )

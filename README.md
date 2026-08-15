@@ -40,29 +40,29 @@ Setup asks for a location name, the client ID and secret key. You will get a map
 
 ## Device Configuration Options
 
-Radius, alert distance, lookback window, and polling interval are changed via **Configure** on the integration entry. Changing any of them reloads the entry.
+Radius, alert distance, lookback window, and polling interval are changed via **Configure** on the integration device. Changing any of them reloads the device and its entities.
 
 | Option | Default | Notes |
 |---|---|---|
 | Search radius | 50 km | The radius around the configured location inside which lightning strike data is monitored. The free tier caps this at 100 km. |
-| Nearby alert distance | 16 km | Distance from the configured location that will trip the `Lightning Nearby` binary_sensor. |
+| Nearby alert distance | 16 km | Distance from the configured location inside which a strike will trip the `Lightning Nearby` binary_sensor. Requires the `Enable detailed strike polling` to be enabled in order to obtain distance data. |
 | Lookback window | 5 min | Time range worth of aggregated strike data the API returns. Now minus minutes. The free tier maximum is 5 minutes. |
-| Polling interval | 300 s | How often the integration polls the Xweather API for new data. Best practice is to keep it matching the 5 minute lookback window, which will result in complete uninterupted data. |
-| Keep last strike for | 60 min | How long the "Nearest ..." sensors keep showing the last strike after the storms move out of the search radius. If 0, API polls with no strikes will immediately blank out (unknown) the Nearest sensors.  This timer allows the last received value to coast for X minutes. |
-| Skip strike detail when clear | on | Skips the 10x `/lightning` API query on polls where the 1x summary reports zero pulses. |
-| Map frames | 0 | **0** no map entity at all, **1** a single still, **N** an animated GIF of N frames. |
+| Polling interval | 300 s | How often the integration polls the Xweather API for new data. |
+| Keep last strike for | 60 min | How long the "Nearest ..." sensors keep showing the last strike after the storms move out of the search radius. If 0, API polls with no strikes will immediately blank out (unknown) the "Nearest..." sensors.  This timer allows the last received value to coast for X minutes. |
+| Enable detailed strike polling | on | ON enables polling of the `/lightning/` API endpoint that returns detailed aggregated data on the nearest lightning strike. This populates all the "Nearest..." sensor entities. When this setting is disabled, all the entities which rely on it are set for not visible to reduce clutter. |
+| Map frames | 0 | **0** no map entity at all, **1** a single still image, **N** an animated GIF of N frames. |
 | Map style | Icons | Bolt icons, strike circles, or icons over a radar underlay. |
 | Map size | 640 | Square edge in pixels. |
 
-### Lookback vs Polling Relationship
+### Lookback Window vs Polling Interval Relationship
 
-The aggregate counts are a **rolling lookback ending at the moment of the poll** — not a delta since the last poll, and not a running total. Each poll asks "how many pulses in the trailing N minutes?", where N is the `lookback window` minutes. Window and interval are independent settings, and their relationship decides how complete your historical data is. Keep them equal unless you have a specific reason not to. Remember the free tier only allows up to 5 minutes for the lookback window.
+The aggregate counts from the `/lightning/summary/` API endpoint are a **rolling lookback ending at the moment of the API poll.** Each poll asks "how many pulses in the trailing N minutes?", where N is the `lookback window` minutes. The free tier of xWeather allows a maximum of 5 minutes lookback. If you keep the `Polling Interval` set to match the `lookback window`, your data set will be continuous without gaps. This is the most ideal configuration. Therefore both default to 5 minutes.
 
 | | Result |
 |---|---|
 | Lookback window **=** polling interval | Samples tile cleanly. Summing them gives a true total. Default of 5 minutes for both. |
 | Lookback window **<** polling interval | Gaps between samples. Strikes in the gap are never counted. Reduces API calls at the expense of gaps in data, which may or may not be ok for you. |
-| Lookback window **>** polling interval | Samples overlap; a strike is counted in several of them. Summing over-counts. Bad idea, don't do this. |
+| Lookback window **>** polling interval | Samples overlap; the same strike is counted in several of them. Summing over-counts. Bad idea, don't do this. |
 
 
 ## Entities
@@ -73,8 +73,8 @@ Each location based device provides the following entities:
 
 | Entity | On when |
 |---|---|
-| Lightning detected | At least one pulse in the window inside the search radius |
-| Lightning nearby | Closest strike is within the nearby alert distance |
+| Lightning detected | At least one pulse detected inside the search radius |
+| Lightning nearby | Closest strike is within the nearby alert distance (requires `Enable detailed strike polling` toggle on to obtain the nearest strike distance.) |
 
 ### Sensors — aggregate counts (`/lightning/summary` API endpoint)
 
@@ -89,9 +89,11 @@ Each location based device provides the following entities:
 | Peak amplitude average | A |
 | Last pulse | timestamp |
 
-Counts report `0` rather than `unknown` when there are no strikes, so history graphs and long-term statistics stay continuous.
+Counts report `0` rather than `unknown` when there are no detected strikes, so history graphs and long-term statistics stay continuous.
 
-### Sensors — nearest individual strike (`/lightning` API endpoint)
+### Sensors — nearest individual strike (`/lightning/` API endpoint)
+
+These entities require the `Enable detailed strike polling` configuration toggle to be on.  When the basic summary polling detects >0 strikes in the search radius (`pulse count > 0`), the integration will begin polling for and populating this data as well.  When there are no strikes within the search radius (`pulse count = 0`), polling for this detailed strike data ceases. There is no need to poll for non-existent data. Polling this API endpoint is a 10x hit against your API request count. Therefore it is critical to avoid pointless polling to avoid hitting your 15,000 requests per month free tier API request limit.
 
 | Entity | Unit |
 |---|---|
@@ -128,7 +130,7 @@ The **Lightning activity** sensor is an enum sensor that always has a value whil
 
 If this sensor reads `Clear`, polling is working and the sky is quiet. If the integration genuinely fails, entities go `unavailable` instead.
 
-**Retention** keeps the last strike on the "Nearest ..." sensors for the configured period rather than blanking them. During retention:
+**Retention** keeps the last strike on the "Nearest ..." sensors for the configured period rather than blanking them immediately. During the retention window:
 
 - `Nearest strike age` keeps climbing, recomputed each poll, so it is obvious the reading is historical.
 - `Nearest strike time` renders as relative time in the UI ("47 minutes ago").
@@ -141,17 +143,19 @@ Retained strikes live in memory, so a Home Assistant restart during the retentio
 
 This matters more than it usually does, because one of the two endpoints is metered at a premium:
 
-- `/lightning` — **10x multiplier**, and on standard access limited to a 100 km radius, the past 5 minutes, and 1000 strikes per query.
 - `/lightning/summary` — no multiplier listed, so 1x.
+- `/lightning/` — **10x multiplier**, and on standard access limited to a 100 km radius, the past 5 minutes, and 1000 strikes per query.
 
-**Skip Detailed API Calls When Clear** (on by default) is where most of the saving comes from. It now governs map refreshes as well as the strike query: with it off, the map refreshes every poll rather than only when activity changes. Both queries use the same radius and the same window, so when the 1x summary reports zero pulses, the 10x `/lightning` query provably has nothing to return. On those polls it is skipped entirely.
+
+**Enable detailed strike polling** (on by default) controls whether the individual-strike `Nearest ...` sensors exist at all. There is no mode where `/lightning` is queried unconditionally: both queries use the same radius and window, so when the 1x summary reports zero pulses, the 10x `/lightning` query provably has nothing to return, and it is skipped even while the option is on. Turning the option off just removes the sensors and the possibility of that query firing — it costs nothing extra to leave on if you want the detail whenever there's something to find, and the map image refresh cadence is unaffected either way (see [The lightning map](#the-lightning-map) below).
 
 At the 5 minute default, 288 polls a day or approx 8600 polls per month out of a 15,000 poll free tier maximum.
 
 | Configuration | Units/day |
 |---|---|
-| Gate on, quiet day | **288** |
-| Gate on, storms ~5% of the day | 438 |
+| Detailed polling off | **288** |
+| Detailed polling on, quiet day | 288 |
+| Detailed polling on, storms ~5% of the day | 438 |
 
 The Xweather Lightning Enterprise add-on drops the multiplier to 1x and lifts the radius to 500 km, the lookback to 24 hours, and the result cap to 50,000.
 
@@ -260,7 +264,7 @@ No `?`, no parameter names, no separate fields — one segment, one underscore. 
 
 ## Known rough edges
 
-- **The summary is now load-bearing.** With the skip option on, a broken summary query means the strike query never fires and the "Nearest ..." sensors stay empty forever. If Lightning activity reads `Clear` through a storm you can see out of the window, turn off **Skip strike detail when clear** to isolate whether the summary or the strike query is at fault.
+- **The summary is now load-bearing.** With detailed polling enabled, `/lightning` is only queried once the summary reports a nonzero pulse count — a summary that always reports zero, even through a storm, silently keeps the strike query from ever firing and the "Nearest ..." sensors stay unknown forever. There is no toggle that forces `/lightning` to run unconditionally to rule this in or out; if Lightning activity reads `Clear` through a storm you can see out the window, enable debug logging (below) and check what `/lightning/summary` is actually returning.
 - **Verify the summary request shape.** The `/lightning/summary` docs describe the response fields precisely but present the request parameters in a JavaScript tab that does not render in plain HTML, so the exact `closest` + `p` + `radius` combination used here was inferred from the general query conventions rather than read verbatim. The client normalises both object and single-item-array responses, and `api.py` logs the raw payload at debug level. If counts come back empty while the curl above returns data, that request is the first place to look. Enable debug logging with:
 
   ```yaml

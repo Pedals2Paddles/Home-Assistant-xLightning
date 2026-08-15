@@ -11,6 +11,61 @@ This project follows [Semantic Versioning](https://semver.org/).
 > starts from a single commit of the real code at 0.7.0. This changelog is the
 > accurate record of how it got here; git history from 0.7.0 forward is real.
 
+## [0.10.1]
+
+### Fixed
+- **The `/lightning`-dependent entities did not actually hide when detailed
+  polling was off.** 0.10.0's fix relied on `entity_registry_visible_default`
+  alone, which Home Assistant's entity registry only ever consults the first
+  time an entity is registered — it is never re-applied on a later reload, so
+  toggling the option after initial setup had no visible effect on entities
+  that already existed. Fixed by explicitly reconciling each entity's
+  `hidden_by` state against the current option value on every setup
+  (`entity.py`'s new `sync_gated_visibility()`), while leaving alone any
+  entity the user has manually hidden or shown themselves.
+- **Enable Detailed Strike Polling could persist as off on entries that
+  predate the option**, with no stored value to read a fallback from.
+  `async_setup_entry` now backfills the option explicitly to its default the
+  first time it finds an entry missing it, rather than relying on `.get()`
+  fallbacks at every read site.
+
+## [0.10.0]
+
+### Changed
+- **The `/lightning`-dependent entities hide themselves, rather than showing
+  `unknown`, while Enable Detailed Strike Polling is off.** The seven
+  "Nearest ..." sensors and the `Lightning nearby` binary sensor are hidden
+  (not disabled) whenever they have no possible value to show — the entities
+  still exist and can be manually unhidden, but stay out of the default
+  dashboard and area views. Turning detailed polling back on unhides them
+  automatically, without a new entity ID. The always-available sensors
+  (activity, aggregate counts, diagnostics) are unaffected.
+- The lightning map image entity is deliberately **not** given the same
+  treatment: it stays fully uncreated (not just hidden) when map frames is 0.
+  A hidden-but-present map entity could still be manually surfaced and
+  trigger a real 10x-multiplier Raster Maps fetch on a map explicitly turned
+  off, which the current not-created behavior makes impossible.
+
+## [0.9.0]
+
+### Changed
+- **`skip_when_clear` is now `enable_detailed_polling`, with a different
+  meaning.** The old toggle only gated whether a poll skipped the 10x
+  `/lightning` query when the summary reported nothing — turning it off made
+  the integration query `/lightning` on every poll regardless, including
+  polls the summary had already proven were empty. That mode is gone: there
+  is no longer any way to poll `/lightning` unconditionally. The toggle now
+  simply enables or disables the individual-strike `Nearest ...` sensors.
+  When enabled, the 10x query still only fires on polls where the summary
+  found at least one pulse, exactly as before. When disabled, only the 1x
+  summary is polled and the `Nearest ...` sensors stay unknown — useful if
+  you only want the aggregate counts and never need strike-level detail.
+- **Lightning map refresh cadence is no longer tied to this option.**
+  Previously, turning the toggle off also made the map image refresh on
+  every poll instead of only on activity changes, as a freshness escape
+  hatch. That coupling is removed: the map now always refreshes only on
+  activity transitions, regardless of the detailed-polling setting.
+
 ## [0.8.0]
 
 ### Removed

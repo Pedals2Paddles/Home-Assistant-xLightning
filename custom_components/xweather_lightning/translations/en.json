@@ -61,18 +61,18 @@
           "window_minutes": "Lookback window",
           "scan_interval": "Polling interval",
           "retention_minutes": "Keep last strike for",
-          "skip_when_clear": "Skip Detailed API Calls When Clear",
+          "enable_detailed_polling": "Enable detailed strike polling",
           "map_style": "Map style",
           "map_size": "Map size (pixels)",
-          "map_frames": "Lightning Map Frames"
+          "map_frames": "Lightning map frames"
         },
         "data_description": {
           "radius_km": "How far out to look for strikes.",
           "nearby_km": "The 'Lightning nearby' sensor turns on when a strike falls within this distance.",
           "window_minutes": "How far back the counts reach. Values above 5 minutes require the Lightning Enterprise add-on.",
-          "scan_interval": "How often to poll. Each poll makes 2 requests.",
+          "scan_interval": "How often to poll. Each poll makes 1 request, or 2 when detailed polling is enabled and lightning is active.",
           "retention_minutes": "After the sky goes quiet, keep reporting the last strike for this long so the 'Nearest ...' sensors read as history instead of unknown. Set to 0 to blank them as soon as the storm leaves the window.",
-          "skip_when_clear": "Skip the detailed (and potentially expensive) API calls and map graphic refreshes when there is no lightning detected within the search radius. Detailed API calls and map refreshes are a 10x multiplier against your xWeather API requests. This can add up very fast against the free tier's 15,000 request limit. With this skip option enabled (default), the integration will only use the 10x multiplier detailed API call when there is actually lightning detected within your selected search radius. It is a waste of electrons to poll for non-existent details anyway.",
+          "enable_detailed_polling": "When the basic summary polling detects >0 strikes in the search radius (pulse count > 0), the integration will begin polling for and populating the detailed nearest strike data as well. When there are no strikes within the search radius (pulse count = 0), polling for this detailed strike data ceases. There is no need to poll for non-existent data. Polling this API endpoint is a 10x hit against your API request count.",
           "map_style": "Applies when map frames is 1 or more. Icons draws lightning bolts, circles draws plotted points, radar adds a radar underlay (extra cost).",
           "map_size": "Square edge length, when a map is enabled. Larger images cost the same but take longer to fetch.",
           "map_frames": "Number of map graphic frames for the lightning map image entity. Default (0) because this is a 10x multiplier against your xWeather API requests. This can add up very fast against the free tier's 15,000 request limit. A value of 1 creates a still image. A value greater than 1 creates an animated GIF with the value being the number of frames. Each frame steps back 5 minutes, matching how often the lightning map layers are regenerated."

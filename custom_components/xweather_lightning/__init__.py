@@ -8,7 +8,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import XWeatherLightningClient
-from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
+from .const import (
+    CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
+    CONF_ENABLE_DETAILED_POLLING,
+    DEFAULT_ENABLE_DETAILED_POLLING,
+)
 from .coordinator import XWeatherLightningCoordinator
 
 PLATFORMS: list[Platform] = [
@@ -24,6 +29,19 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: XWeatherLightningConfigEntry
 ) -> bool:
     """Set up a monitored location from a config entry."""
+    # Entries created before this option existed have no value for it at all,
+    # not a stored False. Backfilling makes that state explicit in the entry
+    # (visible in diagnostics) instead of relying on a `.get()` fallback that
+    # is easy to lose track of across renames like this option's.
+    if CONF_ENABLE_DETAILED_POLLING not in entry.options:
+        hass.config_entries.async_update_entry(
+            entry,
+            options={
+                **entry.options,
+                CONF_ENABLE_DETAILED_POLLING: DEFAULT_ENABLE_DETAILED_POLLING,
+            },
+        )
+
     client = XWeatherLightningClient(
         async_get_clientsession(hass),
         entry.data[CONF_CLIENT_ID],

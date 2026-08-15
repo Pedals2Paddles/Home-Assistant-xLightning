@@ -23,6 +23,7 @@ from .const import (
     ACTIVITY_ACTIVE,
     ACTIVITY_CLEAR,
     ACTIVITY_RECENT,
+    CONF_ENABLE_DETAILED_POLLING,
     CONF_MAP_FRAMES,
     CONF_MAP_SIZE,
     CONF_MAP_STYLE,
@@ -30,8 +31,8 @@ from .const import (
     CONF_RADIUS_KM,
     CONF_RETENTION_MINUTES,
     CONF_SCAN_INTERVAL,
-    CONF_SKIP_WHEN_CLEAR,
     CONF_WINDOW_MINUTES,
+    DEFAULT_ENABLE_DETAILED_POLLING,
     DEFAULT_MAP_FRAMES,
     DEFAULT_MAP_SIZE,
     DEFAULT_MAP_STYLE,
@@ -39,7 +40,6 @@ from .const import (
     DEFAULT_RADIUS_KM,
     DEFAULT_RETENTION_MINUTES,
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_SKIP_WHEN_CLEAR,
     DEFAULT_WINDOW_MINUTES,
     DOMAIN,
 )
@@ -178,11 +178,11 @@ class XWeatherLightningCoordinator(DataUpdateCoordinator[LightningData]):
         self._requests_maps += count
 
     @property
-    def skip_when_clear(self) -> bool:
-        """Return whether to skip /lightning when the summary reports nothing."""
+    def enable_detailed_polling(self) -> bool:
+        """Return whether the /lightning strike-detail endpoint may be polled at all."""
         return bool(
             self.config_entry.options.get(
-                CONF_SKIP_WHEN_CLEAR, DEFAULT_SKIP_WHEN_CLEAR
+                CONF_ENABLE_DETAILED_POLLING, DEFAULT_ENABLE_DETAILED_POLLING
             )
         )
 
@@ -190,8 +190,11 @@ class XWeatherLightningCoordinator(DataUpdateCoordinator[LightningData]):
         """Fetch the current lightning picture for this location.
 
         Two phases. The cheap summary goes out first; the expensive
-        /lightning strike query only follows if the summary says there is
-        something to find.
+        /lightning strike query only follows when detailed polling is
+        enabled AND the summary says there is something to find. There is no
+        mode that polls /lightning unconditionally — querying it when the
+        summary already proved the radius is empty would waste a 10x-cost
+        request on a result already known to be nothing.
         """
         lat = self.latitude
         lon = self.longitude
@@ -205,21 +208,26 @@ class XWeatherLightningCoordinator(DataUpdateCoordinator[LightningData]):
 
             pulses = self._pulse_count(summary)
 
-            # --- Phase 2: strike detail, only when phase 1 found activity ---
-            skipped = self.skip_when_clear and pulses == 0
-            if skipped:
+            # --- Phase 2: strike detail, only when enabled and phase 1 found activity ---
+            if not self.enable_detailed_polling:
+                _LOGGER.debug("Detailed polling disabled; skipping the /lightning query")
+                skipped = True
+                live_nearest = None
+            elif pulses == 0:
                 _LOGGER.debug(
                     "Summary reports 0 pulses within %s km over %s min; "
                     "skipping the /lightning query",
                     radius,
                     window,
                 )
+                skipped = True
                 live_nearest = None
             else:
                 live_nearest = await self.client.async_get_nearest_pulse(
                     lat, lon, radius, window
                 )
                 self._requests_lightning += 1
+                skipped = False
 
         except XWeatherAuthError as err:
             # Triggers the reauth flow rather than an endless retry loop.

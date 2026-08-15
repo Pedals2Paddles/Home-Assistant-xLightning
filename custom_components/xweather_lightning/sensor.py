@@ -28,7 +28,7 @@ from homeassistant.util import dt as dt_util
 from . import XWeatherLightningConfigEntry
 from .const import ACTIVITY_STATES, PULSE_TYPE_CG, PULSE_TYPE_IC
 from .coordinator import LightningData, XWeatherLightningCoordinator
-from .entity import XWeatherLightningEntity, nested_get
+from .entity import XWeatherLightningEntity, nested_get, sync_gated_visibility
 
 PARALLEL_UPDATES = 0
 
@@ -69,6 +69,11 @@ class LightningSensorDescription(SensorEntityDescription):
 
     value_fn: Callable[[LightningData], StateType | datetime]
     attrs_fn: Callable[[LightningData], dict[str, Any]] | None = None
+    # True for sensors whose value can only ever come from /lightning. Hidden
+    # by default (not disabled) while detailed polling is off, since the
+    # entity still exists and has no state to show, but re-enabling the
+    # option should make it reappear without a new entity ID.
+    requires_detailed_polling: bool = False
 
 
 def _nearest_attrs(data: LightningData) -> dict[str, Any]:
@@ -189,6 +194,7 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfLength.KILOMETERS,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
+        requires_detailed_polling=True,
         value_fn=lambda data: nested_get(data.nearest, "relativeTo.distanceKM"),
         attrs_fn=_nearest_attrs,
     ),
@@ -198,6 +204,7 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
         icon="mdi:compass-outline",
         native_unit_of_measurement=DEGREE,
         suggested_display_precision=0,
+        requires_detailed_polling=True,
         value_fn=lambda data: nested_get(data.nearest, "relativeTo.bearing"),
     ),
     LightningSensorDescription(
@@ -211,6 +218,7 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
             "n", "nne", "ne", "ene", "e", "ese", "se", "sse",
             "s", "ssw", "sw", "wsw", "w", "wnw", "nw", "nnw", STATE_NONE,
         ],
+        requires_detailed_polling=True,
         value_fn=lambda data: str(
             nested_get(data.nearest, "relativeTo.bearingENG") or ""
         ).lower()
@@ -221,6 +229,7 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
         translation_key="nearest_type",
         device_class=SensorDeviceClass.ENUM,
         options=[*PULSE_TYPE_MAP.values(), STATE_NONE],
+        requires_detailed_polling=True,
         value_fn=lambda data: PULSE_TYPE_MAP.get(
             str(nested_get(data.nearest, "ob.pulse.type") or "").lower(), STATE_NONE
         ),
@@ -232,6 +241,7 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
+        requires_detailed_polling=True,
         value_fn=lambda data: nested_get(data.nearest, "ob.pulse.peakamp"),
     ),
     LightningSensorDescription(
@@ -239,6 +249,7 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
         translation_key="nearest_time",
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:clock-alert-outline",
+        requires_detailed_polling=True,
         value_fn=lambda data: _timestamp(nested_get(data.nearest, "ob.dateTimeISO")),
     ),
     LightningSensorDescription(
@@ -247,6 +258,7 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.SECONDS,
         suggested_unit_of_measurement=UnitOfTime.MINUTES,
+        requires_detailed_polling=True,
         value_fn=lambda data: data.nearest_age_seconds,
     ),
     # --- Diagnostics ---
@@ -282,6 +294,13 @@ async def async_setup_entry(
     """Set up the lightning sensors for a configured location."""
     coordinator = entry.runtime_data
 
+    sync_gated_visibility(
+        hass,
+        entry,
+        "sensor",
+        [d.key for d in SENSORS if d.requires_detailed_polling],
+        coordinator.enable_detailed_polling,
+    )
     async_add_entities(
         XWeatherLightningSensor(coordinator, description) for description in SENSORS
     )
@@ -300,6 +319,11 @@ class XWeatherLightningSensor(XWeatherLightningEntity, SensorEntity):
         """Initialise the sensor from its description."""
         super().__init__(coordinator, description.key)
         self.entity_description = description
+        if (
+            description.requires_detailed_polling
+            and not coordinator.enable_detailed_polling
+        ):
+            self._attr_entity_registry_visible_default = False
 
     @property
     def native_value(self) -> StateType | datetime:

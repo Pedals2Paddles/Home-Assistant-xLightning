@@ -29,6 +29,7 @@ from .api import (
 from .const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
+    CONF_ENABLE_DETAILED_POLLING,
     CONF_MAP_FRAMES,
     CONF_MAP_SIZE,
     CONF_MAP_STYLE,
@@ -36,8 +37,8 @@ from .const import (
     CONF_RADIUS_KM,
     CONF_RETENTION_MINUTES,
     CONF_SCAN_INTERVAL,
-    CONF_SKIP_WHEN_CLEAR,
     CONF_WINDOW_MINUTES,
+    DEFAULT_ENABLE_DETAILED_POLLING,
     DEFAULT_MAP_FRAMES,
     DEFAULT_MAP_SIZE,
     DEFAULT_MAP_STYLE,
@@ -45,7 +46,6 @@ from .const import (
     DEFAULT_RADIUS_KM,
     DEFAULT_RETENTION_MINUTES,
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_SKIP_WHEN_CLEAR,
     DEFAULT_WINDOW_MINUTES,
     DOMAIN,
     MAP_SIZES,
@@ -129,8 +129,10 @@ def _options_schema(options: Mapping[str, Any]) -> vol.Schema:
                 )
             ),
             vol.Required(
-                CONF_SKIP_WHEN_CLEAR,
-                default=options.get(CONF_SKIP_WHEN_CLEAR, DEFAULT_SKIP_WHEN_CLEAR),
+                CONF_ENABLE_DETAILED_POLLING,
+                default=options.get(
+                    CONF_ENABLE_DETAILED_POLLING, DEFAULT_ENABLE_DETAILED_POLLING
+                ),
             ): selector.BooleanSelector(),
             vol.Required(
                 CONF_MAP_STYLE,
@@ -264,7 +266,7 @@ class XWeatherLightningConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_WINDOW_MINUTES: DEFAULT_WINDOW_MINUTES,
                         CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
                         CONF_RETENTION_MINUTES: DEFAULT_RETENTION_MINUTES,
-                        CONF_SKIP_WHEN_CLEAR: DEFAULT_SKIP_WHEN_CLEAR,
+                        CONF_ENABLE_DETAILED_POLLING: DEFAULT_ENABLE_DETAILED_POLLING,
                         CONF_MAP_STYLE: DEFAULT_MAP_STYLE,
                         CONF_MAP_SIZE: DEFAULT_MAP_SIZE,
                         CONF_MAP_FRAMES: DEFAULT_MAP_FRAMES,
@@ -428,7 +430,9 @@ class XWeatherLightningOptionsFlow(OptionsFlow):
                     CONF_WINDOW_MINUTES: int(user_input[CONF_WINDOW_MINUTES]),
                     CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
                     CONF_RETENTION_MINUTES: int(user_input[CONF_RETENTION_MINUTES]),
-                    CONF_SKIP_WHEN_CLEAR: bool(user_input[CONF_SKIP_WHEN_CLEAR]),
+                    CONF_ENABLE_DETAILED_POLLING: bool(
+                        user_input[CONF_ENABLE_DETAILED_POLLING]
+                    ),
                     CONF_MAP_STYLE: str(user_input[CONF_MAP_STYLE]),
                     CONF_MAP_SIZE: int(user_input[CONF_MAP_SIZE]),
                     CONF_MAP_FRAMES: int(user_input[CONF_MAP_FRAMES]),

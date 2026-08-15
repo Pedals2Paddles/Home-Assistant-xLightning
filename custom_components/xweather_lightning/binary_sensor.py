@@ -15,7 +15,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import XWeatherLightningConfigEntry
 from .coordinator import LightningData, XWeatherLightningCoordinator
-from .entity import XWeatherLightningEntity, nested_get
+from .entity import XWeatherLightningEntity, nested_get, sync_gated_visibility
 
 PARALLEL_UPDATES = 0
 
@@ -46,6 +46,9 @@ class LightningBinarySensorDescription(BinarySensorEntityDescription):
     """Describes a lightning binary sensor."""
 
     value_fn: Callable[[LightningData, XWeatherLightningCoordinator], bool]
+    # True for binary sensors whose value can only ever come from /lightning.
+    # Hidden by default (not disabled) while detailed polling is off.
+    requires_detailed_polling: bool = False
 
 
 BINARY_SENSORS: tuple[LightningBinarySensorDescription, ...] = (
@@ -59,6 +62,7 @@ BINARY_SENSORS: tuple[LightningBinarySensorDescription, ...] = (
         key="lightning_nearby",
         translation_key="lightning_nearby",
         device_class=BinarySensorDeviceClass.SAFETY,
+        requires_detailed_polling=True,
         value_fn=_nearby,
     ),
 )
@@ -72,6 +76,13 @@ async def async_setup_entry(
     """Set up the lightning binary sensors."""
     coordinator = entry.runtime_data
 
+    sync_gated_visibility(
+        hass,
+        entry,
+        "binary_sensor",
+        [d.key for d in BINARY_SENSORS if d.requires_detailed_polling],
+        coordinator.enable_detailed_polling,
+    )
     async_add_entities(
         XWeatherLightningBinarySensor(coordinator, description)
         for description in BINARY_SENSORS
@@ -91,6 +102,11 @@ class XWeatherLightningBinarySensor(XWeatherLightningEntity, BinarySensorEntity)
         """Initialise the binary sensor from its description."""
         super().__init__(coordinator, description.key)
         self.entity_description = description
+        if (
+            description.requires_detailed_polling
+            and not coordinator.enable_detailed_polling
+        ):
+            self._attr_entity_registry_visible_default = False
 
     @property
     def is_on(self) -> bool | None:

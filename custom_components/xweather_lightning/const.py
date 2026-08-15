@@ -16,7 +16,7 @@ CONF_WINDOW_MINUTES: Final = "window_minutes"
 CONF_NEARBY_KM: Final = "nearby_km"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 CONF_RETENTION_MINUTES: Final = "retention_minutes"
-CONF_SKIP_WHEN_CLEAR: Final = "skip_when_clear"
+CONF_ENABLE_DETAILED_POLLING: Final = "enable_detailed_polling"
 CONF_MAP_STYLE: Final = "map_style"
 CONF_MAP_SIZE: Final = "map_size"
 CONF_MAP_FRAMES: Final = "map_frames"
@@ -36,11 +36,13 @@ DEFAULT_SCAN_INTERVAL: Final = 300  # seconds
 DEFAULT_RETENTION_MINUTES: Final = 60
 MAX_RETENTION_MINUTES: Final = 1440
 
-# /lightning/summary is 1x; /lightning is 10x. When the summary reports zero
-# pulses in the same radius and window, the strike query provably has nothing
-# to return, so skipping it costs nothing in accuracy and saves ~91% of the
-# request units on a quiet poll.
-DEFAULT_SKIP_WHEN_CLEAR: Final = True
+# /lightning/summary is 1x; /lightning is 10x. Detailed polling is an
+# opt-in tier on top of the summary, not a separate always-on query: when
+# enabled, it still only fires on polls where the summary reports at least
+# one pulse in the same radius and window, since the strike query provably
+# has nothing to return otherwise. There is no mode that polls it
+# unconditionally.
+DEFAULT_ENABLE_DETAILED_POLLING: Final = True
 
 # Raster Maps. Lightning map layers carry the same 10x multiplier as the data
 # endpoint, so imagery is fetched lazily and only when something new is worth
