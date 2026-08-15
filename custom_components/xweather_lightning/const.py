@@ -61,12 +61,12 @@ MAX_MAP_FRAMES: Final = 24
 MAP_FRAME_STEP_MINUTES: Final = 5
 GIF_FRAME_DURATION_MS: Final = 600
 
-# Activity status. This sensor always has a value while the integration is
-# running, so "nothing is happening" is never confused with "something failed".
+# Internal activity state, not user-facing. Drives the lightning map's
+# refresh gating in image.py: it refreshes while active and on every
+# transition between these three, but not on repeated polls that stay clear.
 ACTIVITY_ACTIVE: Final = "active"
 ACTIVITY_RECENT: Final = "recent"
 ACTIVITY_CLEAR: Final = "clear"
-ACTIVITY_STATES: Final = [ACTIVITY_ACTIVE, ACTIVITY_RECENT, ACTIVITY_CLEAR]
 
 MIN_SCAN_INTERVAL: Final = 60
 MAX_RADIUS_KM: Final = 100  # standard access ceiling

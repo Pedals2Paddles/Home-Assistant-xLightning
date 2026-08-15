@@ -11,6 +11,21 @@ This project follows [Semantic Versioning](https://semver.org/).
 > starts from a single commit of the real code at 0.7.0. This changelog is the
 > accurate record of how it got here; git history from 0.7.0 forward is real.
 
+## [0.11.0]
+
+### Removed
+- **The `Lightning activity` sensor.** It existed to keep something readable
+  while the "Nearest ..." sensors blank to `unknown`, but the sensor's own
+  three states (`Active` / `Recently cleared` / `Clear`) needed their own
+  explanation on top of retention's — a second thing to understand in
+  service of un-confusing the first. Removed rather than reworded; retention
+  is documented directly in the README's Retention section without it.
+- The internal three-state activity value it exposed (`active` / `recent` /
+  `clear`) is **not** gone — it still drives the lightning map's refresh
+  gating in `image.py`, which refreshes on activity transitions rather than
+  every poll. Only the user-facing sensor and its now-unused `ACTIVITY_STATES`
+  enum-options constant were removed.
+
 ## [0.10.1]
 
 ### Fixed

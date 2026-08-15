@@ -116,19 +116,9 @@ These entities require the `Enable detailed strike polling` configuration toggle
 Search radius reflects the configured option, useful for templating.
 
 
-### "Clear" vs "unknown"
+### Retention
 
-Once a storm leaves the lookback window's timeframe, the API has nothing to return. This will blank every "Nearest ..." sensor to `unknown`. This kind of looks broken, but it is impossible to store a non-existent measurement. Zero would not be appropropriate since zero also could mean lightning is repeatedly striking your house.
-
-The **Lightning activity** sensor is an enum sensor that always has a value while the integration is running to help mitigate the other measurements appearing as unknown.  The Lightning Activity sensor will report:
-
-| State | Meaning |
-|---|---|
-| `Active` | Pulses detected in the current window |
-| `Recently cleared` | Nothing right now, but the most recent strike is still being retained by the `keep strikes for` coast setting. |
-| `Clear` | No strikes detected now and none are being retained by the `keep strikes for` setting. |
-
-If this sensor reads `Clear`, polling is working and the sky is quiet. If the integration genuinely fails, entities go `unavailable` instead.
+Once there are no strikes detected within the configured Search Radius, the API has nothing to return. This will blank every "Nearest ..." sensor to `unknown`. This kind of looks broken, but it is impossible to store a non-existent measurement. Zero would not be appropropriate since zero also could mean lightning is repeatedly striking your house.
 
 **Retention** keeps the last strike on the "Nearest ..." sensors for the configured period rather than blanking them immediately. During the retention window:
 
@@ -137,7 +127,7 @@ If this sensor reads `Clear`, polling is working and the sky is quiet. If the in
 - `Nearest strike distance` carries a `retained: true` attribute.
 - **`Lightning nearby` stays off.** Retention never latches the proximity alert, because that sensor is safety-critical and must be based on truely live data.
 
-Retained strikes live in memory, so a Home Assistant restart during the retention period drops back to `Clear` and `unknown`. The recorded history is unaffected.
+Retained strikes live in memory, so a Home Assistant restart during the retention period drops the "Nearest ..." sensors back to `unknown` immediately, as if retention had already expired. The recorded history is unaffected.
 
 ### API request multipliers
 
@@ -264,7 +254,7 @@ No `?`, no parameter names, no separate fields — one segment, one underscore. 
 
 ## Known rough edges
 
-- **The summary is now load-bearing.** With detailed polling enabled, `/lightning` is only queried once the summary reports a nonzero pulse count — a summary that always reports zero, even through a storm, silently keeps the strike query from ever firing and the "Nearest ..." sensors stay unknown forever. There is no toggle that forces `/lightning` to run unconditionally to rule this in or out; if Lightning activity reads `Clear` through a storm you can see out the window, enable debug logging (below) and check what `/lightning/summary` is actually returning.
+- **The summary is now load-bearing.** With detailed polling enabled, `/lightning` is only queried once the summary reports a nonzero pulse count — a summary that always reports zero, even through a storm, silently keeps the strike query from ever firing and the "Nearest ..." sensors stay unknown forever. There is no toggle that forces `/lightning` to run unconditionally to rule this in or out; if the "Nearest ..." sensors stay unknown through a storm you can see out the window, enable debug logging (below) and check what `/lightning/summary` is actually returning.
 - **Verify the summary request shape.** The `/lightning/summary` docs describe the response fields precisely but present the request parameters in a JavaScript tab that does not render in plain HTML, so the exact `closest` + `p` + `radius` combination used here was inferred from the general query conventions rather than read verbatim. The client normalises both object and single-item-array responses, and `api.py` logs the raw payload at debug level. If counts come back empty while the curl above returns data, that request is the first place to look. Enable debug logging with:
 
   ```yaml

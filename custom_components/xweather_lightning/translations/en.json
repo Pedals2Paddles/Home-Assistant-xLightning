@@ -90,14 +90,6 @@
       }
     },
     "sensor": {
-      "activity_status": {
-        "name": "Lightning activity",
-        "state": {
-          "active": "Active",
-          "recent": "Recently cleared",
-          "clear": "Clear"
-        }
-      },
       "pulse_count": {
         "name": "Pulse count"
       },

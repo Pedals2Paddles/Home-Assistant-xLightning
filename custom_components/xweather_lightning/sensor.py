@@ -26,7 +26,7 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
 from . import XWeatherLightningConfigEntry
-from .const import ACTIVITY_STATES, PULSE_TYPE_CG, PULSE_TYPE_IC
+from .const import PULSE_TYPE_CG, PULSE_TYPE_IC
 from .coordinator import LightningData, XWeatherLightningCoordinator
 from .entity import XWeatherLightningEntity, nested_get, sync_gated_visibility
 
@@ -109,15 +109,6 @@ def _request_attrs(data: LightningData) -> dict[str, Any]:
 
 
 SENSORS: tuple[LightningSensorDescription, ...] = (
-    # Always has a value while the integration is running, so "nothing is
-    # happening" never looks like "something failed".
-    LightningSensorDescription(
-        key="activity_status",
-        translation_key="activity_status",
-        device_class=SensorDeviceClass.ENUM,
-        options=ACTIVITY_STATES,
-        value_fn=lambda data: data.activity,
-    ),
     # --- Aggregate counts over the lookback window (/lightning/summary) ---
     LightningSensorDescription(
         key="pulse_count",
