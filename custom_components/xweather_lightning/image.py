@@ -12,6 +12,8 @@ from io import BytesIO
 import logging
 from typing import Any
 
+from aiohttp import ClientTimeout
+
 from homeassistant.components.image import ImageEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -23,18 +25,24 @@ from .const import (
     ACTIVITY_ACTIVE,
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
-    DEFAULT_MAP_FRAMES,
     GIF_FRAME_DURATION_MS,
     MAP_FRAME_STEP_MINUTES,
 )
 from .coordinator import XWeatherLightningCoordinator
 from .entity import XWeatherLightningEntity
-from .map import MAP_PADDING, bounding_box, build_layers, frame_offsets, redact, static_map_url
+from .map import (
+    MAP_PADDING,
+    bounding_box,
+    build_layers,
+    frame_offsets,
+    redact,
+    static_map_url,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
-FETCH_TIMEOUT = 30
+FETCH_TIMEOUT = ClientTimeout(total=30)
 
 
 async def async_setup_entry(
@@ -130,7 +138,8 @@ class XWeatherLightningMap(XWeatherLightningEntity, ImageEntity):
 
         try:
             self._cached_bytes = await self._async_render()
-        except Exception:  # noqa: BLE001 - never let a map failure break the entity
+        except Exception:
+            # Deliberately broad: never let a map failure break the entity.
             _LOGGER.exception("Failed to render the lightning map")
             return None
 
@@ -193,7 +202,8 @@ class XWeatherLightningMap(XWeatherLightningEntity, ImageEntity):
                 return await response.read()
         except (TimeoutError, asyncio.TimeoutError):
             _LOGGER.warning("Timeout fetching %s", redact(url))
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
+            # Deliberately broad: a single failed frame must not abort the map.
             _LOGGER.warning("Error fetching %s: %s", redact(url), err)
         return None
 
@@ -206,7 +216,7 @@ def _assemble_gif(blobs: list[bytes]) -> bytes | None:
     lazily avoids pinning a version that could conflict with core's own.
     """
     try:
-        from PIL import Image  # noqa: PLC0415
+        from PIL import Image
     except ImportError:
         _LOGGER.warning(
             "Pillow is not available, so the animated map cannot be assembled. "
@@ -228,6 +238,7 @@ def _assemble_gif(blobs: list[bytes]) -> bytes | None:
             optimize=True,
         )
         return buffer.getvalue()
-    except Exception as err:  # noqa: BLE001
+    except Exception as err:
+        # Deliberately broad: fall back to a single still on any Pillow error.
         _LOGGER.warning("Could not assemble the animated map: %s", err)
         return None

@@ -222,7 +222,8 @@ async def _async_validate(
         return "cannot_connect"
     except XWeatherError:
         return "unknown"
-    except Exception:  # noqa: BLE001 - surface as a generic form error
+    except Exception:
+        # Deliberately broad: surface anything unexpected as a generic form error.
         _LOGGER.exception("Unexpected error validating Xweather credentials")
         return "unknown"
     return None

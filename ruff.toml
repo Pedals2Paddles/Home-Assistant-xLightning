@@ -1,0 +1,23 @@
+# Lint contract for this repository.
+#
+# Pinned explicitly so `ruff check` answers the same locally as it does in CI.
+# Without this file ruff falls back to whatever rule set the GitHub action
+# happens to default to, which both disagreed with the import style used here
+# and could change under us on an action update.
+
+target-version = "py312"
+line-length = 88
+
+[lint]
+# E/F are ruff's own defaults. I keeps imports tidy, EXE catches shebang and
+# permission-bit mismatches in scripts/, and RUF100 flags `noqa` directives
+# that no longer suppress anything.
+select = ["E4", "E7", "E9", "F", "I", "EXE", "RUF100"]
+
+[lint.isort]
+# Home Assistant's house style, which this integration is written in:
+# `import x` and `from x import y` sort together by module name instead of
+# being split into separate groups, and homeassistant gets its own section
+# between third-party packages and the integration's own modules.
+force-sort-within-sections = true
+known-first-party = ["homeassistant"]

@@ -17,7 +17,6 @@ from . import XWeatherLightningConfigEntry
 from .coordinator import LightningData, XWeatherLightningCoordinator
 from .entity import XWeatherLightningEntity, nested_get
 
-
 PARALLEL_UPDATES = 0
 
 

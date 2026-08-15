@@ -107,6 +107,10 @@ class XWeatherLightningClient:
                     raise XWeatherQuotaError("Xweather rate limit exceeded")
                 response.raise_for_status()
                 payload = await response.json(content_type=None)
+                # Credentials travel in the query string, not the body, so the
+                # raw response is safe to log. This is the fastest way to see
+                # what a request shape actually returned.
+                _LOGGER.debug("%s returned %s", path, payload)
         except asyncio.TimeoutError as err:
             raise XWeatherConnectionError(f"Timeout contacting {path}") from err
         except aiohttp.ClientResponseError as err:

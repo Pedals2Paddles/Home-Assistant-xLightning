@@ -287,7 +287,10 @@ class XWeatherLightningCoordinator(DataUpdateCoordinator[LightningData]):
         """Total pulses reported by the summary, treating no data as zero."""
         if not summary:
             return 0
-        count = summary.get("pulse", {}).get("count")
+        # An explicit "pulse": null is a valid quiet-sky response, so this
+        # cannot chain .get() straight through.
+        pulse = summary.get("pulse")
+        count = pulse.get("count") if isinstance(pulse, dict) else None
         return int(count) if isinstance(count, (int, float)) else 0
 
     def _apply_retention(

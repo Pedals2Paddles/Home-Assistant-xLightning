@@ -16,6 +16,13 @@ Custom integrations go under `custom_integrations/`, not `core_integrations/`.
 The directory name must match the manifest `domain` exactly:
 `xweather_lightning`.
 
+## The copy under custom_components/
+
+`custom_components/xweather_lightning/brand/` holds the same four files.
+Home Assistant ignores them, but HACS checks that path before falling back to
+the brands repository, so their presence is what keeps its brands check green.
+Regenerating the artwork here means copying it there too.
+
 ## Files
 
 | File | Size |

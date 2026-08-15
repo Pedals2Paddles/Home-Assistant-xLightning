@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Generate Home Assistant brands artwork from the source logo.
 
 Home Assistant does not read branding from custom_components/. The frontend

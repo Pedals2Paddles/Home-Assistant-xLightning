@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Render a MOCKUP of how the lightning map sits in a Home Assistant card.
 
 This does NOT contact Xweather. The map imagery and strike positions are
@@ -17,8 +16,11 @@ import random
 
 from PIL import Image, ImageDraw, ImageFont
 
+# HERE is scripts/; map.py lives under the repo root one level up. Rendered
+# PNGs are still written next to this script, so both paths are needed.
 HERE = pathlib.Path(__file__).parent
-MAP_PY = HERE / "custom_components" / "xweather_lightning" / "map.py"
+ROOT = HERE.parent
+MAP_PY = ROOT / "custom_components" / "xweather_lightning" / "map.py"
 
 # Example location: the one used throughout the Xweather docs.
 LAT, LON = 44.98, -93.27

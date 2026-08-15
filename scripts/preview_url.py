@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Print the exact Raster Maps URLs this integration would request.
 
 Uses the integration's own map.py, so what it prints is what Home Assistant
@@ -25,14 +24,16 @@ import importlib.util
 import pathlib
 import sys
 
-HERE = pathlib.Path(__file__).parent
-MAP_PY = HERE / "custom_components" / "xweather_lightning" / "map.py"
+# Resolved relative to this file, not the working directory, so the script
+# runs from anywhere.
+ROOT = pathlib.Path(__file__).parent.parent
+MAP_PY = ROOT / "custom_components" / "xweather_lightning" / "map.py"
 
 
 def load_map_module():
     """Import map.py directly, without pulling in Home Assistant."""
     if not MAP_PY.exists():
-        sys.exit(f"Could not find {MAP_PY}. Run this from the repo root.")
+        sys.exit(f"Could not find {MAP_PY}. Is this script still inside the repo?")
     spec = importlib.util.spec_from_file_location("xw_map", MAP_PY)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

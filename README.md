@@ -1,6 +1,6 @@
 # Home Assistant xLightning
 
-[![Validate](https://github.com/pedals2paddles/ha-xlightning/actions/workflows/validate.yml/badge.svg)](https://github.com/pedals2paddles/ha-xlightning/actions/workflows/validate.yml)
+[![Validate](https://github.com/Pedals2Paddles/Home-Assistant-xLightning/actions/workflows/validate.yml/badge.svg)](https://github.com/Pedals2Paddles/Home-Assistant-xLightning/actions/workflows/validate.yml)
 [![hacs](https://img.shields.io/badge/HACS-custom-41BDF5.svg)](https://hacs.xyz)
 
 <img src="brands/icon.png" alt="" width="128" align="right">
@@ -30,7 +30,7 @@ Copy `custom_components/xweather_lightning/` into your Home Assistant `config/cu
 **HACS**
 
 HACS → three-dot menu → Custom repositories → add
-`https://github.com/pedals2paddles/ha-xlightning` with category **Integration**. Install it and restart Home Assistant.
+`https://github.com/Pedals2Paddles/Home-Assistant-xLightning` with category **Integration**. Install it and restart Home Assistant.
 
 Then: **Settings → Devices & Services → Add Integration → Xweather Lightning**.
 
@@ -270,7 +270,7 @@ No `?`, no parameter names, no separate fields — one segment, one underscore. 
 
 ## Design notes
 
-- `DataUpdateCoordinator` with `always_update=False`, so unchanged payloads do not trigger redundant state writes. All entities share one poll.
+- A single `DataUpdateCoordinator` poll feeds every entity, so the entity count has no bearing on API usage. Each poll does write state for all entities: the payload carries request counters and a strike age that change every cycle, so it never compares equal to the previous one.
 - Runtime state lives on `ConfigEntry.runtime_data`, typed via `XWeatherLightningConfigEntry`.
 - Auth failures raise `ConfigEntryAuthFailed`, which opens the reauth flow rather than retrying against credentials that will keep failing. Quota and connection failures raise `UpdateFailed` and back off normally.
 - `api.py` is Home Assistant agnostic and can be exercised standalone.

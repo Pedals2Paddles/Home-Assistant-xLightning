@@ -222,11 +222,15 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
         translation_key="nearest_direction",
         icon="mdi:compass-rose",
         device_class=SensorDeviceClass.ENUM,
+        # Enum options must be slugs, so the API's uppercase bearing is
+        # lowercased here and the compass letters come back via translation.
         options=[
-            "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-            "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", STATE_NONE,
+            "n", "nne", "ne", "ene", "e", "ese", "se", "sse",
+            "s", "ssw", "sw", "wsw", "w", "wnw", "nw", "nnw", STATE_NONE,
         ],
-        value_fn=lambda data: nested_get(data.nearest, "relativeTo.bearingENG")
+        value_fn=lambda data: str(
+            nested_get(data.nearest, "relativeTo.bearingENG") or ""
+        ).lower()
         or STATE_NONE,
     ),
     LightningSensorDescription(
