@@ -11,6 +11,17 @@ This project follows [Semantic Versioning](https://semver.org/).
 > starts from a single commit of the real code at 0.7.0. This changelog is the
 > accurate record of how it got here; git history from 0.7.0 forward is real.
 
+## [0.12.0]
+
+### Changed
+- **Search radius** and **Nearby alert distance** in the options form now
+  display in Home Assistant's configured distance unit (km, mi, or whatever
+  the "Distance" preference in General Settings is set to) instead of always
+  showing km. Both are still stored internally in km — everything else in
+  the integration, including the Xweather API calls themselves, is
+  unaffected. Conversion happens only at the edges of the options form, via
+  `homeassistant.util.unit_conversion.DistanceConverter`.
+
 ## [0.11.0]
 
 ### Removed

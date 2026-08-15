@@ -42,6 +42,8 @@ Setup asks for a location name, the client ID and secret key. You will get a map
 
 Radius, alert distance, lookback window, and polling interval are changed via **Configure** on the integration device. Changing any of them reloads the device and its entities.
 
+**Search radius** and **Nearby alert distance** display in whichever distance unit Home Assistant is configured for (km, mi, or otherwise) — pick the number that makes sense to you, no conversion needed. The API uses KM, so any other unit of measure is converted in the user interface.  
+
 | Option | Default | Notes |
 |---|---|---|
 | Search radius | 50 km | The radius around the configured location inside which lightning strike data is monitored. The free tier caps this at 100 km. |

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 import logging
+import math
 from typing import Any
 
 import voluptuous as vol
@@ -14,10 +15,11 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlow,
 )
-from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_NAME
-from homeassistant.core import callback
+from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_NAME, UnitOfLength
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.util.unit_conversion import DistanceConverter
 
 from .api import (
     XWeatherAuthError,
@@ -62,31 +64,63 @@ _LOGGER = logging.getLogger(__name__)
 CONF_LOCATION = "location"
 
 
-def _options_schema(options: Mapping[str, Any]) -> vol.Schema:
+def _km_to_display(km: float, unit: str) -> int:
+    """Convert a stored km value to the user's configured distance unit."""
+    return round(DistanceConverter.convert(km, UnitOfLength.KILOMETERS, unit))
+
+
+def _display_to_km(value: float, unit: str) -> int:
+    """Convert a value entered in the user's distance unit back to km.
+
+    Options stay in km regardless of display unit, since that is what the
+    Xweather API and every other km-based constant here expect.
+    """
+    return round(DistanceConverter.convert(value, unit, UnitOfLength.KILOMETERS))
+
+
+def _km_bound_to_display(km: float, unit: str, *, round_fn) -> int:
+    """Convert a km min/max bound without letting the display value round past it.
+
+    `round_fn` should be `math.ceil` for a lower bound and `math.floor` for an
+    upper bound, so the selector's displayed range always sits inside the
+    real km-based limits after converting back.
+    """
+    return int(round_fn(DistanceConverter.convert(km, UnitOfLength.KILOMETERS, unit)))
+
+
+def _options_schema(hass: HomeAssistant, options: Mapping[str, Any]) -> vol.Schema:
     """Build the options schema, seeded with the current values."""
+    length_unit = hass.config.units.length_unit
+    radius_min = _km_bound_to_display(1, length_unit, round_fn=math.ceil)
+    radius_max = _km_bound_to_display(MAX_RADIUS_KM, length_unit, round_fn=math.floor)
+
     return vol.Schema(
         {
             vol.Required(
                 CONF_RADIUS_KM,
-                default=options.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM),
+                default=_km_to_display(
+                    options.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM), length_unit
+                ),
             ): selector.NumberSelector(
                 selector.NumberSelectorConfig(
-                    min=1,
-                    max=MAX_RADIUS_KM,
+                    min=radius_min,
+                    max=radius_max,
                     step=1,
-                    unit_of_measurement="km",
+                    unit_of_measurement=length_unit,
                     mode=selector.NumberSelectorMode.SLIDER,
                 )
             ),
             vol.Required(
                 CONF_NEARBY_KM,
-                default=options.get(CONF_NEARBY_KM, DEFAULT_NEARBY_KM),
+                default=_km_to_display(
+                    options.get(CONF_NEARBY_KM, DEFAULT_NEARBY_KM), length_unit
+                ),
             ): selector.NumberSelector(
                 selector.NumberSelectorConfig(
-                    min=1,
-                    max=MAX_RADIUS_KM,
+                    min=radius_min,
+                    max=radius_max,
                     step=1,
-                    unit_of_measurement="km",
+                    unit_of_measurement=length_unit,
                     mode=selector.NumberSelectorMode.SLIDER,
                 )
             ),
@@ -423,10 +457,15 @@ class XWeatherLightningOptionsFlow(OptionsFlow):
     ) -> ConfigFlowResult:
         """Show and save the options."""
         if user_input is not None:
+            length_unit = self.hass.config.units.length_unit
             return self.async_create_entry(
                 data={
-                    CONF_RADIUS_KM: int(user_input[CONF_RADIUS_KM]),
-                    CONF_NEARBY_KM: int(user_input[CONF_NEARBY_KM]),
+                    CONF_RADIUS_KM: _display_to_km(
+                        user_input[CONF_RADIUS_KM], length_unit
+                    ),
+                    CONF_NEARBY_KM: _display_to_km(
+                        user_input[CONF_NEARBY_KM], length_unit
+                    ),
                     CONF_WINDOW_MINUTES: int(user_input[CONF_WINDOW_MINUTES]),
                     CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
                     CONF_RETENTION_MINUTES: int(user_input[CONF_RETENTION_MINUTES]),
@@ -440,5 +479,6 @@ class XWeatherLightningOptionsFlow(OptionsFlow):
             )
 
         return self.async_show_form(
-            step_id="init", data_schema=_options_schema(self.config_entry.options)
+            step_id="init",
+            data_schema=_options_schema(self.hass, self.config_entry.options),
         )
