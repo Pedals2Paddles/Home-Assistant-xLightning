@@ -1,11 +1,11 @@
-# Home Assistant xLightning
+# Xweather Lightning
 
 [![Validate](https://github.com/Pedals2Paddles/Home-Assistant-xLightning/actions/workflows/validate.yml/badge.svg)](https://github.com/Pedals2Paddles/Home-Assistant-xLightning/actions/workflows/validate.yml)
 [![hacs](https://img.shields.io/badge/HACS-custom-41BDF5.svg)](https://hacs.xyz)
 
 <img src="brands/icon.png" alt="" width="128" align="right">
 
-The Home Assistant xLightning integration provides near real-time lightning detection! The integraton polls the [Vaisala Xweather lightning API](https://www.xweather.com/products/weather-api/lightning) with a set of location coordinates and exposes the results as a Home Assistant device with sensor and binary sensor entities. Each config entry is one monitored location: one device, one polling coordinator, one set of entities. Add the integration multiple times for multiple locations.
+The Xweather Lightning integration provides near real-time lightning detection! The integraton polls the [Vaisala Xweather lightning API](https://www.xweather.com/products/weather-api/lightning) with a set of location coordinates and exposes the results as a Home Assistant device with sensor and binary sensor entities. Each config entry is one monitored location: one device, one polling coordinator, one set of entities. Add the integration multiple times for multiple locations.
 
 Vaisala Xweather offers free API access to their vast set of live and historical data, including their [lightning API](https://www.xweather.com/products/weather-api/lightning). The free tier allows up to 15,000 API requests per month. We have to be smart about how often data is polled in order to not exceed that free tier limit, unless of course you wish to pay for more. I do not pay for more, nor am I going to, so this is written purely from the perspective of free tier utilization.
 
