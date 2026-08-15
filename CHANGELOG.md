@@ -11,6 +11,12 @@ This project follows [Semantic Versioning](https://semver.org/).
 > starts from a single commit of the real code at 0.7.0. This changelog is the
 > accurate record of how it got here; git history from 0.7.0 forward is real.
 
+## [1.0.0]
+
+First stable release. No functional changes from 0.12.0 — this marks the
+integration as settled after the run of fixes and features in the 0.x
+series, rather than any breaking or feature change of its own.
+
 ## [0.12.0]
 
 ### Changed

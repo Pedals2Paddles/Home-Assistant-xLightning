@@ -1,6 +1,6 @@
 # Xweather Lightning
 
-[![Validate](https://github.com/Pedals2Paddles/Home-Assistant-xLightning/actions/workflows/validate.yml/badge.svg)](https://github.com/Pedals2Paddles/Home-Assistant-xLightning/actions/workflows/validate.yml)
+[![Validate](https://github.com/Pedals2Paddles/xWeather-Lightning/actions/workflows/validate.yml/badge.svg)](https://github.com/Pedals2Paddles/xWeather-Lightning/actions/workflows/validate.yml)
 [![hacs](https://img.shields.io/badge/HACS-custom-41BDF5.svg)](https://hacs.xyz)
 
 <img src="brands/icon.png" alt="" width="128" align="right">
@@ -30,7 +30,7 @@ Copy `custom_components/xweather_lightning/` into your Home Assistant `config/cu
 **HACS**
 
 HACS → three-dot menu → Custom repositories → add
-`https://github.com/Pedals2Paddles/Home-Assistant-xLightning` with category **Integration**. Install it and restart Home Assistant.
+`https://github.com/Pedals2Paddles/xWeather-Lightning` with category **Integration**. Install it and restart Home Assistant.
 
 Then: **Settings → Devices & Services → Add Integration → Xweather Lightning**.
 

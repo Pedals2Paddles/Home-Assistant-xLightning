@@ -3,10 +3,10 @@
   "name": "Xweather Lightning",
   "codeowners": ["@Pedals2Paddles"],
   "config_flow": true,
-  "documentation": "https://github.com/Pedals2Paddles/Home-Assistant-xLightning",
+  "documentation": "https://github.com/Pedals2Paddles/xWeather-Lightning",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/Pedals2Paddles/Home-Assistant-xLightning/issues",
+  "issue_tracker": "https://github.com/Pedals2Paddles/xWeather-Lightning/issues",
   "requirements": [],
-  "version": "0.12.0"
+  "version": "1.0.0"
 }
