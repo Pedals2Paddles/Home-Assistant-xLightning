@@ -246,6 +246,11 @@ No `?`, no parameter names, no separate fields — one segment, one underscore. 
 
 ---
 
+## Credit to Claude AI
+
+This integration is my idea, vision, and direction. Claude Code AI did the heavy lifting, writing all the code to create what I wanted. It took Claude approximately 12 minutes to create the integration from scratch with my criteria and design intent.  This is truly impressive. I do not have the time in my life to learn all of the code to build this myself.  If it was not for Claude AI, this integration wouldn't exist now and wouldn't exist in the future. Once created, it took a few days of detailed adjustments and changes.  I tell Claude what I want changed, and he executed it.  Not all of that is captured in the commit history, since I began the development outside of my Github, all captured in the initial commit.
+
+
 ## Design notes
 
 - A single `DataUpdateCoordinator` poll feeds every entity, so the entity count has no bearing on API usage. Each poll does write state for all entities: the payload carries request counters and a strike age that change every cycle, so it never compares equal to the previous one.
