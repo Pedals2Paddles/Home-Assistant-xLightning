@@ -32,7 +32,6 @@ async def async_get_config_entry_diagnostics(
             "radius_km": coordinator.radius_km,
             "window_minutes": coordinator.window_minutes,
             "nearby_km": coordinator.nearby_km,
-            "threats_enabled": coordinator.threats_enabled,
         },
         "data": async_redact_data(data, {"relativeTo", "loc"}) if data else None,
     }

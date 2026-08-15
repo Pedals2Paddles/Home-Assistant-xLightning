@@ -51,5 +51,5 @@ async def async_unload_entry(
 async def _async_options_updated(
     hass: HomeAssistant, entry: XWeatherLightningConfigEntry
 ) -> None:
-    """Reload the entry so new options (radius, interval, threats) take effect."""
+    """Reload the entry so new options (radius, interval) take effect."""
     await hass.config_entries.async_reload(entry.entry_id)

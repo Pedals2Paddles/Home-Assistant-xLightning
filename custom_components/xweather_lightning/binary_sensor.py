@@ -41,22 +41,11 @@ def _nearby(data: LightningData, coordinator: XWeatherLightningCoordinator) -> b
     return distance <= coordinator.nearby_km
 
 
-def _threat_active(data: LightningData, _coordinator) -> bool:
-    """True when a nowcast threat polygon covers or approaches the area."""
-    return data.threat is not None
-
-
-def _threat_severe(data: LightningData, _coordinator) -> bool:
-    """True when the active threat is flagged severe."""
-    return bool(nested_get(data.threat, "details.severe"))
-
-
 @dataclass(frozen=True, kw_only=True)
 class LightningBinarySensorDescription(BinarySensorEntityDescription):
     """Describes a lightning binary sensor."""
 
     value_fn: Callable[[LightningData, XWeatherLightningCoordinator], bool]
-    requires_threats: bool = False
 
 
 BINARY_SENSORS: tuple[LightningBinarySensorDescription, ...] = (
@@ -72,20 +61,6 @@ BINARY_SENSORS: tuple[LightningBinarySensorDescription, ...] = (
         device_class=BinarySensorDeviceClass.SAFETY,
         value_fn=_nearby,
     ),
-    LightningBinarySensorDescription(
-        key="threat_active",
-        translation_key="threat_active",
-        device_class=BinarySensorDeviceClass.SAFETY,
-        requires_threats=True,
-        value_fn=_threat_active,
-    ),
-    LightningBinarySensorDescription(
-        key="threat_severe",
-        translation_key="threat_severe",
-        device_class=BinarySensorDeviceClass.SAFETY,
-        requires_threats=True,
-        value_fn=_threat_severe,
-    ),
 )
 
 
@@ -100,7 +75,6 @@ async def async_setup_entry(
     async_add_entities(
         XWeatherLightningBinarySensor(coordinator, description)
         for description in BINARY_SENSORS
-        if not description.requires_threats or coordinator.threats_enabled
     )
 
 

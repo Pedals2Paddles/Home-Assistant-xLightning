@@ -18,7 +18,6 @@ from homeassistant.const import (
     EntityCategory,
     UnitOfElectricCurrent,
     UnitOfLength,
-    UnitOfSpeed,
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
@@ -70,7 +69,6 @@ class LightningSensorDescription(SensorEntityDescription):
 
     value_fn: Callable[[LightningData], StateType | datetime]
     attrs_fn: Callable[[LightningData], dict[str, Any]] | None = None
-    requires_threats: bool = False
 
 
 def _nearest_attrs(data: LightningData) -> dict[str, Any]:
@@ -88,32 +86,17 @@ def _nearest_attrs(data: LightningData) -> dict[str, Any]:
     }
 
 
-def _threat_attrs(data: LightningData) -> dict[str, Any]:
-    """Expose the nowcast centroid and period count."""
-    if data.threat is None:
-        return {}
-    periods = data.threat.get("periods") or []
-    first_centroid = nested_get(periods[0], "centroid.coordinates") if periods else None
-    return {
-        "storm_id": nested_get(data.threat, "details.stormId"),
-        "total_periods": nested_get(data.threat, "details.totalPeriods"),
-        "movement_reliability": nested_get(data.threat, "details.movement.reliability"),
-        "centroid": first_centroid,
-    }
-
-
 def _request_attrs(data: LightningData) -> dict[str, Any]:
     """Break requests down by endpoint so cost can be worked out per plan.
 
     Deliberately reports raw request counts rather than a currency-like
-    "units" figure: the 10x multipliers on /lightning and /lightning/threats
-    are documented for standard access and drop to 1x with the Lightning
-    Enterprise add-on, so only the caller knows their real multiplier.
+    "units" figure: the 10x multiplier on /lightning is documented for
+    standard access and drops to 1x with the Lightning Enterprise add-on, so
+    only the caller knows their real multiplier.
     """
     return {
         "summary_requests": data.requests_summary,
         "lightning_requests": data.requests_lightning,
-        "threats_requests": data.requests_threats,
         "map_requests": data.requests_maps,
         "lightning_skipped_last_poll": data.nearest_skipped,
         "counted_since": "integration load (resets on restart or reload)",
@@ -266,34 +249,6 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
         suggested_unit_of_measurement=UnitOfTime.MINUTES,
         value_fn=lambda data: data.nearest_age_seconds,
     ),
-    # --- Nowcast threat (/lightning/threats, optional, 10x multiplier) ---
-    LightningSensorDescription(
-        key="threat_speed",
-        translation_key="threat_speed",
-        device_class=SensorDeviceClass.SPEED,
-        native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        requires_threats=True,
-        value_fn=lambda data: nested_get(data.threat, "details.movement.speedKPH"),
-        attrs_fn=_threat_attrs,
-    ),
-    LightningSensorDescription(
-        key="threat_heading",
-        translation_key="threat_heading",
-        icon="mdi:arrow-decision",
-        requires_threats=True,
-        value_fn=lambda data: nested_get(data.threat, "details.movement.dirTo"),
-    ),
-    LightningSensorDescription(
-        key="threat_expires",
-        translation_key="threat_expires",
-        device_class=SensorDeviceClass.TIMESTAMP,
-        requires_threats=True,
-        value_fn=lambda data: _timestamp(
-            nested_get(data.threat, "details.range.maxDateTimeISO")
-        ),
-    ),
     # --- Diagnostics ---
     LightningSensorDescription(
         key="api_requests",
@@ -303,10 +258,7 @@ SENSORS: tuple[LightningSensorDescription, ...] = (
         state_class=SensorStateClass.TOTAL_INCREASING,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: (
-            data.requests_summary
-            + data.requests_lightning
-            + data.requests_threats
-            + data.requests_maps
+            data.requests_summary + data.requests_lightning + data.requests_maps
         ),
         attrs_fn=_request_attrs,
     ),
@@ -331,9 +283,7 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
 
     async_add_entities(
-        XWeatherLightningSensor(coordinator, description)
-        for description in SENSORS
-        if not description.requires_threats or coordinator.threats_enabled
+        XWeatherLightningSensor(coordinator, description) for description in SENSORS
     )
 
 

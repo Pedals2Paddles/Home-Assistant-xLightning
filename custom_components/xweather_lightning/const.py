@@ -14,7 +14,6 @@ CONF_CLIENT_SECRET: Final = "client_secret"
 CONF_RADIUS_KM: Final = "radius_km"
 CONF_WINDOW_MINUTES: Final = "window_minutes"
 CONF_NEARBY_KM: Final = "nearby_km"
-CONF_ENABLE_THREATS: Final = "enable_threats"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 CONF_RETENTION_MINUTES: Final = "retention_minutes"
 CONF_SKIP_WHEN_CLEAR: Final = "skip_when_clear"
@@ -32,7 +31,6 @@ DEFAULT_RADIUS_KM: Final = 50
 DEFAULT_WINDOW_MINUTES: Final = 5
 DEFAULT_NEARBY_KM: Final = 16  # ~10 miles, a common "seek shelter" threshold
 DEFAULT_SCAN_INTERVAL: Final = 300  # seconds
-DEFAULT_ENABLE_THREATS: Final = False
 # How long to keep reporting the last strike after the sky goes quiet, so the
 # "Nearest ..." sensors read as history rather than as unknown. 0 disables.
 DEFAULT_RETENTION_MINUTES: Final = 60

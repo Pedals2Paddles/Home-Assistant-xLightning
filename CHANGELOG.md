@@ -11,6 +11,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 > starts from a single commit of the real code at 0.7.0. This changelog is the
 > accurate record of how it got here; git history from 0.7.0 forward is real.
 
+## [0.8.0]
+
+### Removed
+- **Storm threat nowcasts.** The `/lightning/threats` endpoint carries the
+  same 10x request multiplier as `/lightning`, so polling it on top of the
+  main strike query was too expensive for the free tier's request allowance.
+  The nowcast data was also of limited use without a map to show it against,
+  which is a further expense on its own. Removed the `enable_threats` option,
+  the `threat_active` / `threat_severe` binary sensors, the `threat_speed` /
+  `threat_heading` / `threat_expires` sensors, and the `threats_requests`
+  diagnostics field.
+
 ## [0.7.0]
 
 ### Fixed

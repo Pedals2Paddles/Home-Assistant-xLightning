@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
@@ -24,7 +23,6 @@ from .const import (
     ACTIVITY_ACTIVE,
     ACTIVITY_CLEAR,
     ACTIVITY_RECENT,
-    CONF_ENABLE_THREATS,
     CONF_MAP_FRAMES,
     CONF_MAP_SIZE,
     CONF_MAP_STYLE,
@@ -34,7 +32,6 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SKIP_WHEN_CLEAR,
     CONF_WINDOW_MINUTES,
-    DEFAULT_ENABLE_THREATS,
     DEFAULT_MAP_FRAMES,
     DEFAULT_MAP_SIZE,
     DEFAULT_MAP_STYLE,
@@ -59,7 +56,6 @@ class LightningData:
 
     summary: dict[str, Any] | None = None
     nearest: dict[str, Any] | None = None
-    threat: dict[str, Any] | None = None
     # True when `nearest` is a retained strike from an earlier poll rather than
     # something detected in the current window.
     nearest_stale: bool = False
@@ -76,7 +72,6 @@ class LightningData:
     # spells, when nothing else in the payload changes.
     requests_summary: int = 0
     requests_lightning: int = 0
-    requests_threats: int = 0
     requests_maps: int = 0
 
 
@@ -98,7 +93,6 @@ class XWeatherLightningCoordinator(DataUpdateCoordinator[LightningData]):
         self._retained_nearest: dict[str, Any] | None = None
         self._requests_summary = 0
         self._requests_lightning = 0
-        self._requests_threats = 0
         self._requests_maps = 0
 
         super().__init__(
@@ -192,45 +186,22 @@ class XWeatherLightningCoordinator(DataUpdateCoordinator[LightningData]):
             )
         )
 
-    @property
-    def threats_enabled(self) -> bool:
-        """Return whether the threats endpoint should be polled."""
-        return bool(
-            self.config_entry.options.get(CONF_ENABLE_THREATS, DEFAULT_ENABLE_THREATS)
-        )
-
     async def _async_update_data(self) -> LightningData:
         """Fetch the current lightning picture for this location.
 
-        Two phases. The cheap summary and the threat nowcast go out together;
-        the expensive /lightning strike query only follows if the summary says
-        there is something to find.
-
-        Threats are deliberately NOT gated on the summary. A nowcast covers
-        storms approaching from outside the search radius, so it can and should
-        report a threat while the local pulse count is still zero. Gating it
-        would defeat the early warning it exists to provide.
+        Two phases. The cheap summary goes out first; the expensive
+        /lightning strike query only follows if the summary says there is
+        something to find.
         """
         lat = self.latitude
         lon = self.longitude
         radius = self.radius_km
         window = self.window_minutes
 
-        # --- Phase 1: cheap summary, plus the independent threat nowcast ---
-        phase_one: list[Any] = [
-            self.client.async_get_summary(lat, lon, radius, window)
-        ]
-        if self.threats_enabled:
-            phase_one.append(self.client.async_get_threat(lat, lon, radius))
-
         try:
-            phase_one_results = await asyncio.gather(*phase_one)
+            # --- Phase 1: cheap summary ---
+            summary = await self.client.async_get_summary(lat, lon, radius, window)
             self._requests_summary += 1
-            if self.threats_enabled:
-                self._requests_threats += 1
-
-            summary = phase_one_results[0]
-            threat = phase_one_results[1] if self.threats_enabled else None
 
             pulses = self._pulse_count(summary)
 
@@ -271,14 +242,12 @@ class XWeatherLightningCoordinator(DataUpdateCoordinator[LightningData]):
         return LightningData(
             summary=summary,
             nearest=nearest,
-            threat=threat,
             nearest_stale=stale,
             nearest_age_seconds=age,
             activity=activity,
             nearest_skipped=skipped,
             requests_summary=self._requests_summary,
             requests_lightning=self._requests_lightning,
-            requests_threats=self._requests_threats,
             requests_maps=self._requests_maps,
         )
 

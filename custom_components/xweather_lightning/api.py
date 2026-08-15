@@ -195,25 +195,6 @@ class XWeatherLightningClient:
         )
         return self._first(response)
 
-    async def async_get_threat(
-        self, latitude: float, longitude: float, radius_km: int
-    ) -> dict[str, Any] | None:
-        """Return the nearest active lightning threat nowcast, if any.
-
-        Uses /lightning/threats, which forecasts up to 60 minutes of potential
-        thunderstorm activity in 10 minute intervals. Note the 10x request
-        multiplier on this endpoint.
-        """
-        response = await self._async_request(
-            "/lightning/threats/closest",
-            {
-                "p": f"{latitude},{longitude}",
-                "radius": f"{radius_km}km",
-                "limit": 1,
-            },
-        )
-        return self._first(response)
-
     async def async_validate_credentials(
         self, latitude: float, longitude: float
     ) -> None:

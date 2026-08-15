@@ -40,7 +40,7 @@ Setup asks for a location name, the client ID and secret key. You will get a map
 
 ## Device Configuration Options
 
-Radius, alert distance, lookback window, polling interval, and threats are changed via **Configure** on the integration entry. Changing any of them reloads the entry.
+Radius, alert distance, lookback window, and polling interval are changed via **Configure** on the integration entry. Changing any of them reloads the entry.
 
 | Option | Default | Notes |
 |---|---|---|
@@ -50,7 +50,6 @@ Radius, alert distance, lookback window, polling interval, and threats are chang
 | Polling interval | 300 s | How often the integration polls the Xweather API for new data. Best practice is to keep it matching the 5 minute lookback window, which will result in complete uninterupted data. |
 | Keep last strike for | 60 min | How long the "Nearest ..." sensors keep showing the last strike after the storms move out of the search radius. If 0, API polls with no strikes will immediately blank out (unknown) the Nearest sensors.  This timer allows the last received value to coast for X minutes. |
 | Skip strike detail when clear | on | Skips the 10x `/lightning` API query on polls where the 1x summary reports zero pulses. |
-| Poll storm threat nowcasts | off | Adds 4 entities. Costs an extra 10x-multiplier request per poll. |
 | Map frames | 0 | **0** no map entity at all, **1** a single still, **N** an animated GIF of N frames. |
 | Map style | Icons | Bolt icons, strike circles, or icons over a radar underlay. |
 | Map size | 640 | Square edge in pixels. |
@@ -76,8 +75,6 @@ Each location based device provides the following entities:
 |---|---|
 | Lightning detected | At least one pulse in the window inside the search radius |
 | Lightning nearby | Closest strike is within the nearby alert distance |
-| Storm threat active | A nowcast threat polygon was returned (threats enabled only) |
-| Storm threat severe | The active threat is flagged severe (threats enabled only) |
 
 ### Sensors — aggregate counts (`/lightning/summary` API endpoint)
 
@@ -107,16 +104,6 @@ Counts report `0` rather than `unknown` when there are no strikes, so history gr
 | Nearest strike age | s |
 
 **Nearest strike distance** carries the strike's own latitude and longitude as attributes, plus the number of detecting sensors and the chi-square confidence metric (lower means the sensor observations agreed more closely). The coordinates let you plot the strike on a map card.
-
-### Sensors — storm nowcast (`/lightning/threats` API endpoint (optional))
-
-| Entity | Unit |
-|---|---|
-| Storm threat speed | km/h |
-| Storm threat heading | cardinal |
-| Storm threat ends | timestamp |
-
-**Storm threat speed** carries the storm ID, period count, movement reliability, and current centroid as attributes.
 
 ### Image
 
@@ -152,10 +139,9 @@ Retained strikes live in memory, so a Home Assistant restart during the retentio
 
 ### API request multipliers
 
-This matters more than it usually does, because two of the three endpoints are metered at a premium:
+This matters more than it usually does, because one of the two endpoints is metered at a premium:
 
 - `/lightning` — **10x multiplier**, and on standard access limited to a 100 km radius, the past 5 minutes, and 1000 strikes per query.
-- `/lightning/threats` — **10x multiplier**, updates every 2 minutes, forecasts 60 minutes ahead in 10-minute intervals.
 - `/lightning/summary` — no multiplier listed, so 1x.
 
 **Skip Detailed API Calls When Clear** (on by default) is where most of the saving comes from. It now governs map refreshes as well as the strike query: with it off, the map refreshes every poll rather than only when activity changes. Both queries use the same radius and the same window, so when the 1x summary reports zero pulses, the 10x `/lightning` query provably has nothing to return. On those polls it is skipped entirely.
@@ -164,16 +150,12 @@ At the 5 minute default, 288 polls a day or approx 8600 polls per month out of a
 
 | Configuration | Units/day |
 |---|---|
-| Gate on, no threats, quiet day | **288** |
-| Gate on, no threats, storms ~5% of the day | 438 |
-| Gate on, threats on | 3,318 |
-| Gate off, threats on | 6,048 |
+| Gate on, quiet day | **288** |
+| Gate on, storms ~5% of the day | 438 |
 
-The Xweather Lightning Enterprise add-on drops both multipliers to 1x and lifts the radius to 500 km, the lookback to 24 hours, and the result cap to 50,000.
+The Xweather Lightning Enterprise add-on drops the multiplier to 1x and lifts the radius to 500 km, the lookback to 24 hours, and the result cap to 50,000.
 
-**Threats are deliberately not gated.** A nowcast covers storms approaching from *outside* your search radius, so it legitimately reports a threat while your local pulse count is still zero. Gating it on the summary would suppress exactly the early warning it exists to give.
-
-**Watching the spend.** The **API requests** diagnostic sensor counts actual HTTP requests, with a per-endpoint breakdown (`summary_requests`, `lightning_requests`, `threats_requests`, `map_requests`) and a `lightning_skipped_last_poll` flag in its attributes. It reports raw request counts rather than a units figure, because only you know whether your plan carries the 10x multipliers. Multiply by your own rates. The counter resets on restart or reload.
+**Watching the spend.** The **API requests** diagnostic sensor counts actual HTTP requests, with a per-endpoint breakdown (`summary_requests`, `lightning_requests`, `map_requests`) and a `lightning_skipped_last_poll` flag in its attributes. It reports raw request counts rather than a units figure, because only you know whether your plan carries the 10x multiplier. Multiply by your own rate. The counter resets on restart or reload.
 
 ---
 

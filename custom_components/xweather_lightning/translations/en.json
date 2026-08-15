@@ -54,13 +54,12 @@
     "step": {
       "init": {
         "title": "Lightning options",
-        "description": "The /lightning and /lightning/threats endpoints carry a 10x request multiplier, so shorter polling intervals consume your allowance quickly. Standard (non-Enterprise) access caps the radius at 100 km and the lookback at 5 minutes.",
+        "description": "The /lightning endpoint carries a 10x request multiplier, so shorter polling intervals consume your allowance quickly. Standard (non-Enterprise) access caps the radius at 100 km and the lookback at 5 minutes.",
         "data": {
           "radius_km": "Search radius",
           "nearby_km": "Nearby alert distance",
           "window_minutes": "Lookback window",
           "scan_interval": "Polling interval",
-          "enable_threats": "Poll storm threat nowcasts",
           "retention_minutes": "Keep last strike for",
           "skip_when_clear": "Skip Detailed API Calls When Clear",
           "map_style": "Map style",
@@ -71,8 +70,7 @@
           "radius_km": "How far out to look for strikes.",
           "nearby_km": "The 'Lightning nearby' sensor turns on when a strike falls within this distance.",
           "window_minutes": "How far back the counts reach. Values above 5 minutes require the Lightning Enterprise add-on.",
-          "scan_interval": "How often to poll. Each poll makes 2 requests, or 3 with threats enabled.",
-          "enable_threats": "Adds 60-minute storm nowcast entities. Costs an extra request per poll at a 10x multiplier.",
+          "scan_interval": "How often to poll. Each poll makes 2 requests.",
           "retention_minutes": "After the sky goes quiet, keep reporting the last strike for this long so the 'Nearest ...' sensors read as history instead of unknown. Set to 0 to blank them as soon as the storm leaves the window.",
           "skip_when_clear": "Skip the detailed (and potentially expensive) API calls and map graphic refreshes when there is no lightning detected within the search radius. Detailed API calls and map refreshes are a 10x multiplier against your xWeather API requests. This can add up very fast against the free tier's 15,000 request limit. With this skip option enabled (default), the integration will only use the 10x multiplier detailed API call when there is actually lightning detected within your selected search radius. It is a waste of electrons to poll for non-existent details anyway.",
           "map_style": "Applies when map frames is 1 or more. Icons draws lightning bolts, circles draws plotted points, radar adds a radar underlay (extra cost).",
@@ -89,12 +87,6 @@
       },
       "lightning_nearby": {
         "name": "Lightning nearby"
-      },
-      "threat_active": {
-        "name": "Storm threat active"
-      },
-      "threat_severe": {
-        "name": "Storm threat severe"
       }
     },
     "sensor": {
@@ -174,15 +166,6 @@
       },
       "nearest_age": {
         "name": "Nearest strike age"
-      },
-      "threat_speed": {
-        "name": "Storm threat speed"
-      },
-      "threat_heading": {
-        "name": "Storm threat heading"
-      },
-      "threat_expires": {
-        "name": "Storm threat ends"
       },
       "search_radius": {
         "name": "Search radius"
